@@ -62,10 +62,10 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
             controller.set_path(path)
             set_controller_path = False
         
-        if path is not None and collision_count == 0:
+        if path is not None and len(path)>0 and collision_count == 0:
             end_dist = np.hypot(path[-1,0]-simulator.state.x, path[-1,1]-simulator.state.y)
             #end_dist = np.hypot(path[0,0]-simulator.state.x, path[0,1]-simulator.state.y)
-            print("end_dist" , end_dist)
+            #print("end_dist" , end_dist)
             # TODO: Planning and Controlling
             if args.simulator == "basic":
 
@@ -78,18 +78,52 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
                 }
                 next_w, target = controller.feedback(info)
                 if end_dist > 10:
-                    next_v = 5
-                    
+                    next_v = 5                    
                 else:
                     next_v = 0                
                 command = ControlState("basic", next_v, next_w)
-            elif args.simulator == "diff_drive":
-                next_lw = 0
-                next_rw = 0
+            elif args.simulator == "diff_drive":                
+                if end_dist > 10:
+                    next_v = 5
+                else:
+                    next_v = 0
+                # Lateral
+                info = {
+                    "x":simulator.state.x, 
+                    "y":simulator.state.y, 
+                    "yaw":simulator.state.yaw, 
+                    "v":simulator.state.v, 
+                    "dt":simulator.dt
+                }
+                next_w, target = controller.feedback(info)
+                #v,w to motor control
+                r = simulator.wu/2                
+                l= simulator.l/2
+                phi1 = np.rad2deg(next_v / r - np.deg2rad(next_w) * l / r  )
+                phi2 = np.rad2deg(next_v / r + np.deg2rad(next_w) *  l / r )
+                next_lw = phi1 
+                next_rw = phi2 
                 command = ControlState("diff_drive", next_lw, next_rw)
+
             elif args.simulator == "bicycle":
-                next_a = 0
-                next_delta = 0
+                #next_a = 0
+                #next_delta = 0
+                if end_dist > 10:
+                    target_v = 5
+                else:
+                    target_v = 0
+                next_a = (target_v - simulator.state.v)*0.5
+                # Lateral
+                info = {
+                    "x":simulator.state.x, 
+                    "y":simulator.state.y, 
+                    "yaw":simulator.state.yaw, 
+                    "v":simulator.state.v,
+                    "delta":simulator.cstate.delta,
+                    "l":simulator.l, 
+                    "dt":simulator.dt
+                }
+                next_delta, target = controller.feedback(info)
                 command = ControlState("bicycle", next_a, next_delta)
             else:
                 exit()            
@@ -101,6 +135,20 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
             collision_count = 1
         if collision_count > 0:
             # TODO: Collision Handling
+           
+            back_direction = [np.cos( np.deg2rad(simulator.state.yaw)   ) ,
+                              np.sin( np.deg2rad(simulator.state.yaw)  )   ] 
+           
+           
+            simulator.state.x -= back_direction[0]*50
+            simulator.state.y -= back_direction[1]*50
+            #simulator.state.v = -5
+            simulator.init_pose((simulator.state.x , simulator.state.y , 0))
+            path = []
+            collision_count=0
+            command = ControlState(args.simulator, None, None)
+            simulator.step(command)
+            #mouse_click(cv2.EVENT_LBUTTONUP, simulator.state.x, simulator.state.y, None, None)
             pass
         
         # Render Path

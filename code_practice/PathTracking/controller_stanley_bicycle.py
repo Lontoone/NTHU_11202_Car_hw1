@@ -3,7 +3,8 @@ import numpy as np
 sys.path.append("..")
 import PathTracking.utils as utils
 from PathTracking.controller import Controller
-
+def angle_norm(theta):
+    return (theta + 180) % 360 - 180
 class ControllerStanleyBicycle(Controller):
     def __init__(self, kp=0.5):
         self.path = None
@@ -29,6 +30,10 @@ class ControllerStanleyBicycle(Controller):
         # TODO: Stanley Control for Bicycle Kinematic Model
         if(min_idx ==0):
             min_idx = 1
+        if(min_idx == len( self.path) -1 ):
+            return 0 , target
+        
+
         theta_p = np.arctan2( self.path[min_idx+1,1] - self.path[min_idx ,1] , self.path[min_idx+1,0]- self.path[min_idx,0] )
         ang =   np.deg2rad(yaw)
         theta_e = theta_p - ang
@@ -41,6 +46,6 @@ class ControllerStanleyBicycle(Controller):
         )
         
         phi = np.arctan((-self.kp * e[0,0] )/ (vf+0.001 )) + theta_e
-        next_delta =  angle_norm(np.rad2deg(phi))
+        next_delta = angle_norm(np.rad2deg(phi))
 
         return next_delta, target

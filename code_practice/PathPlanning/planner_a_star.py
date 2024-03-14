@@ -14,7 +14,7 @@ class AstarNode:
         self.g = abs(start[0] - x + start[1]-y)
         self.h = abs(goal[0] - x + goal[1]-y)
 
-        self.h_cost = 2
+        self.h_cost = 1.05
         self.cost = self.g + self.h *self.h_cost
 
         self.parent = None
@@ -87,17 +87,29 @@ class PlannerAStar(Planner):
         self.step_width = 25 #pixel
         self.nodes = {}
 
+        '''
+        [-1,1],
+        [0,1],
+        [1,1],
+
+        [-1,0],
+        [1,0],
+
+        [-1,-1],
+        [0,-1],
+        [1,-1],
+        '''
         self.kernels = [
-            [-1,1],
-            [0,1],
-            [1,1],
+          [-1,1],
+        [0,1],
+        [1,1],
 
-            [-1,0],
-            [1,0],
+        [-1,0],
+        [1,0],
 
-            [-1,-1],
-            [0,-1],
-            [1,-1],
+        [-1,-1],
+        [0,-1],
+        [1,-1],
 
         ]
 
@@ -162,6 +174,7 @@ class PlannerAStar(Planner):
             path_idx = self.nodes[path_idx].parent
             path.append(path_idx)
         path = path[::-1]
+        print("path" , path)
 
         #self.goal_node = (int(200), int(300))
         #self.parent[self.goal_node] = self.goal_node
