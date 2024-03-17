@@ -645,21 +645,21 @@ When a collision occurs, the car is pushed back and the path is reset.
 ```python
 if info["collision"]:
             collision_count = 1
-        if collision_count > 0:
-            # TODO: Collision Handling
-           
-            back_direction = [np.cos( np.deg2rad(simulator.state.yaw)   ) ,
-                              np.sin( np.deg2rad(simulator.state.yaw)  )   ] 
-           
-            simulator.state.x -= back_direction[0]*50
-            simulator.state.y -= back_direction[1]*50
-            #simulator.state.v = -5
-            simulator.init_pose((simulator.state.x , simulator.state.y , 0))
-            path = []
-            collision_count=0
-            command = ControlState(args.simulator, None, None)
-            simulator.step(command)
-            #mouse_click(cv2.EVENT_LBUTTONUP, simulator.state.x, simulator.state.y, None, None)
+            _collision_pos = (simulator.state.x , simulator.state.y)
+
+        if collision_count > 0 and  _collision_pos is not None:
+            # TODO: Collision Handling        
+       
+            collision_distance = np.sqrt((simulator.state.x - _collision_pos[0])**2 +(simulator.state.y - _collision_pos[1])**2) 
+            
+            if(collision_distance  < 15):
+                # if still in collision range
+                backup_command = ControlState(args.simulator, -1, 0)
+                simulator.step(backup_command)
+            else:
+                _collision_pos = None
+                collision_count = 0
+                pass
             pass
 ```
 

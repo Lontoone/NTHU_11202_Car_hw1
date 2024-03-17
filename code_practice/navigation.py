@@ -51,6 +51,7 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
     command = ControlState(args.simulator, None, None)
     pose = start_pose
     collision_count = 0
+    _collision_pos = None
     # Main Loop
     while(True):
         # Update State
@@ -133,13 +134,15 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
         # Collision Handling
         if info["collision"]:
             collision_count = 1
-        if collision_count > 0:
+            _collision_pos = (simulator.state.x , simulator.state.y)
+
+        if collision_count > 0 and  _collision_pos is not None:
             # TODO: Collision Handling
            
             back_direction = [np.cos( np.deg2rad(simulator.state.yaw)   ) ,
                               np.sin( np.deg2rad(simulator.state.yaw)  )   ] 
            
-           
+            '''
             simulator.state.x -= back_direction[0]*50
             simulator.state.y -= back_direction[1]*50
             #simulator.state.v = -5
@@ -148,10 +151,20 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
             collision_count=0
             command = ControlState(args.simulator, None, None)
             simulator.step(command)
-            #mouse_click(cv2.EVENT_LBUTTONUP, simulator.state.x, simulator.state.y, None, None)
+            '''
+            collision_distance = np.sqrt((simulator.state.x - _collision_pos[0])**2 +(simulator.state.y - _collision_pos[1])**2) 
+            
+            if(collision_distance  < 15):
+                # if still in collision range
+                backup_command = ControlState(args.simulator, -1, 0)
+                simulator.step(backup_command)
+            else:
+                _collision_pos = None
+                collision_count = 0
+                pass
             pass
         
-        # Render Path
+        # Render Path0
         img = simulator.render()
         if nav_pos is not None and way_points is not None:
             img = render_path(img, nav_pos, way_points, path)
